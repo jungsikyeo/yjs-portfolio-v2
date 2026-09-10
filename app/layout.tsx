@@ -1,0 +1,25 @@
+import type { Metadata } from "next";
+import "./globals.css";
+
+export const metadata: Metadata = {
+  title: "Vantage · Career Observatory",
+  description: "경력, 프로젝트, 기술의 연결 관계를 탐색하는 포트폴리오.",
+  openGraph: { title: "Vantage · Career Observatory", description: "경력과 프로젝트, 기술의 연결을 탐색하세요.", locale: "ko_KR", type: "website" },
+  twitter: { card: "summary", title: "Vantage · Career Observatory", description: "경력과 프로젝트, 기술의 연결을 탐색하세요." },
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+  },
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="ko" className="dark">
+      <body className="antialiased">{children}</body>
+    </html>
+  );
+}
