@@ -3,7 +3,7 @@ import { ThemeProvider, useTheme } from 'next-themes';
 import { Sun, Moon } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 export function AppearanceProvider({children}:{children:ReactNode}){
-  return <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} storageKey="vantage-appearance" disableTransitionOnChange>{children}</ThemeProvider>;
+  return <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} storageKey="vantage-appearance-v3" disableTransitionOnChange>{children}</ThemeProvider>;
 }
 export function ThemeControls(){
   const {setTheme,theme}=useTheme();
