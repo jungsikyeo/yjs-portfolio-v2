@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import {AppearanceProvider} from "./theme-controls";
 
 export const metadata: Metadata = {
   title: "Vantage · Career Observatory",
@@ -18,8 +19,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className="dark">
-      <body className="antialiased">{children}</body>
+    <html lang="ko" suppressHydrationWarning>
+      <body className="antialiased"><AppearanceProvider>{children}</AppearanceProvider></body>
     </html>
   );
 }
