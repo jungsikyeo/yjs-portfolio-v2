@@ -113,9 +113,25 @@ npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-
 - `app/observatory.tsx`: 화면과 탐색 상태
 - `db/schema.ts`, `drizzle/`: 영구 스냅샷 스키마 및 마이그레이션
 
-## 배포
+## 배포 (Cloudflare Workers)
 
-`npm run build`로 Worker와 정적 자산을 생성합니다. `.openai/hosting.json`의 기존 Site ID를 재사용하여 소스를 저장하고 Sites로 배포합니다. 기본 배포는 소유자 전용입니다. 채용 담당자에게 공개하는 설정은 별도로 변경해야 합니다. D1 바인딩과 마이그레이션은 Sites가 처리합니다. 일반 정적 파일 호스팅만으로는 Notion 서버 연동을 실행할 수 없습니다.
+배포 대상은 Cloudflare Workers이며 공개 주소는 https://portfolio.yeojs.dev 입니다. Worker 이름, D1 바인딩, 커스텀 도메인은 `wrangler.jsonc`에 정의되어 있고, `@cloudflare/vite-plugin`이 빌드 시 이를 `dist/server/wrangler.json`으로 변환합니다.
+
+```sh
+npx wrangler login              # 최초 1회. yeojs.dev 존이 있는 계정으로 로그인
+npm run db:migrate:remote       # D1 스키마 변경이 있을 때만
+npm run deploy                  # 빌드 후 Worker + 정적 자산 배포
+```
+
+Notion 관련 값은 Worker 비밀 값으로 저장합니다. 값이 바뀌면 다시 올립니다. `.env`는 배포에 포함되지 않습니다.
+
+```sh
+npx wrangler secret bulk .env --name portfolio-yjs
+```
+
+- `routes[].custom_domain: true` 덕분에 `portfolio.yeojs.dev` DNS 레코드와 인증서는 배포 시 자동으로 생성됩니다.
+- 로컬 개발(`npm run dev`)은 같은 `wrangler.jsonc`를 읽고 `.env`의 값을 바인딩으로 주입합니다. 로컬 D1은 `npm run db:migrate:local`로 초기화합니다.
+- `.openai/hosting.json`과 `build/sites-vite-plugin.ts`는 이전 Sites 호스팅 호환용으로 남아 있으며 Cloudflare 배포에는 사용되지 않습니다.
 
 ## 검증 범위
 

@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "portfolio-yjs",
+  "account_id": "c628befeba9482d4cb4ec12095b4235f",
+  "main": "vinext/server/fetch-handler",
+  "compatibility_date": "2026-05-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "routes": [{ "pattern": "portfolio.yeojs.dev", "custom_domain": true }],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "portfolio-yjs",
+      "database_id": "308abef5-53b1-4ac3-a615-9adf573daa5d",
+      "migrations_dir": "drizzle"
+    }
+  ],
+  "observability": { "enabled": true }
+}
