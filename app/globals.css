@@ -192,3 +192,11 @@ html[data-transition=theme]::view-transition-old(root),html[data-transition=them
 .credentials .credential-meta span{font-size:13px;color:var(--ink-muted)}
 .credential-meta time{font:11px ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--ink-muted);white-space:nowrap;margin-left:auto}
 @media(max-width:767px){.credential-grid{grid-template-columns:1fr;gap:14px}.credential-card{padding:22px;gap:14px}.credential-meta time{margin-left:0}.credential-meta{column-gap:14px}}
+/* The overview map fits and centers in the same box as the focused map. */
+@media(min-width:768px){.map-overview .graph-viewport{display:flex;align-items:center;justify-content:center}.map-overview .graph-viewport>svg{height:100%!important;width:100%;aspect-ratio:auto!important;min-width:0!important;flex:1}}
+/* The empty search state sits on the same clay as the map instead of the v2 canvas. */
+.empty{inset:44px 0 44px;padding:40px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:var(--clay);color:var(--ink-secondary);font-size:14px}
+.empty button{display:inline-flex;margin:0;color:var(--ink);border:1px solid var(--line);padding:8px 16px;border-radius:20px;font-size:13px;transition:box-shadow var(--motion-duration) var(--motion-ease),color var(--motion-duration) var(--motion-ease)}
+.empty button:hover,.empty button:focus-visible{color:var(--aqua);box-shadow:var(--clay-inset)}
+/* Compact project nodes keep the overview map inside the standard box. */
+.node.compact{width:258px;height:40px;padding:6px 10px;gap:8px}.node.compact>span:nth-child(2){display:flex;align-items:baseline;gap:8px;min-width:0;flex:1}.node.compact strong{max-width:none;min-width:0;flex:1;font-size:12px}.node.compact small{white-space:nowrap;font-size:9px;line-height:1}.node.compact .node-symbol{font-size:15px}
