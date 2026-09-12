@@ -49,12 +49,14 @@ npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-
 | 데이터베이스 | 기존 속성 |
 |---|---|
 | Profile | name, headline, summary, email, github, linkedin, blog |
-| Experience | company, role, period, summary, stack, order, domain |
+| Experience | company, role, period, summary, stack, order, domain, featured(선택) |
 | Project | title, oneLiner, role, period, stack, experience(Relation), featured, order, repoUrls, demoUrl, docsUrl, achievements |
 | Skill | name, category, order |
 | Credential | title, issuer, date |
 
-`NOTION_DB_PROFILE`, `NOTION_DB_EXPERIENCE`, `NOTION_DB_PROJECT`, `NOTION_DB_SKILL`, `NOTION_DB_CREDENTIAL`은 서버에 설정된 명시적 데이터베이스 허용 목록입니다. 매번 해당 DB가 지정 루트의 직접 하위인지 검사합니다. 이 기존 포트폴리오 DB의 행은 기본 노출하며, 선택적으로 `Published` 체크박스를 추가하면 **false인 행을 제외**합니다. 이 다섯 DB 이외의 하위 페이지나 DB는 조회하지 않습니다. 노션 본문/속성은 수정하지 않았습니다.
+`NOTION_DB_PROFILE`, `NOTION_DB_EXPERIENCE`, `NOTION_DB_PROJECT`, `NOTION_DB_SKILL`, `NOTION_DB_CREDENTIAL`은 서버에 설정된 명시적 데이터베이스 허용 목록입니다. 매번 해당 DB가 지정 루트의 직접 하위인지 검사합니다. 이 기존 포트폴리오 DB의 행은 기본 노출하며, 선택적으로 `Published` 체크박스를 추가하면 **false인 행을 제외**합니다. 이 다섯 DB 이외의 하위 페이지나 DB는 조회하지 않습니다.
+
+Experience DB에 `featured` 체크박스를 추가하면 체크된 회사와 그 소속 프로젝트만 사이트에 표시됩니다. 체크되지 않은 회사는 「이전 경력과 프로젝트」 링크로만 안내합니다. 속성이 없으면 모든 회사를 표시합니다. 노션 본문/속성은 수정하지 않았습니다.
 
 ## 대체 어댑터의 최소 콘텐츠 규칙
 

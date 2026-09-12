@@ -17,7 +17,9 @@ export default function Observatory({initial}:{initial:Portfolio}){
 const [sourceData,setData]=useState(initial),[section,setSection]=useState('Overview'),[query,setQuery]=useState(''),[selected,setSelected]=useState<string|null>(null),[view,setView]=useState('map'),[zoom,setZoom]=useState(1),[pan,setPan]=useState({x:0,y:0}),[detail,setDetail]=useState(false),[scope,setScope]=useState('all'); const drag=useRef<{x:number;y:number}|null>(null); const graphRef=useRef<HTMLDivElement>(null); const [motionPaused,setMotionPaused]=useState(false);
 const data=useMemo(()=>{
  if(sourceData.demo)return sourceData;
- const companies=sourceData.entries.filter(e=>e.kind==='experience'&&/^(SK플래닛|에스케이플래닛|알비클라우드)$/i.test(e.title.replace(/\s/g,'')));
+ // An optional `featured` checkbox on the Experience DB picks the companies shown here; without it every company is shown.
+ const experiences=sourceData.entries.filter(e=>e.kind==='experience');
+ const companies=experiences.some(e=>e.featured!==undefined)?experiences.filter(e=>e.featured):experiences;
  const companyIds=new Set(companies.map(e=>e.id));
  const allCompanyIds=new Set(sourceData.entries.filter(e=>e.kind==='experience').map(e=>e.id));
  const projects=sourceData.entries.filter(e=>e.kind==='project'&&(!e.parent||!allCompanyIds.has(e.parent)||companyIds.has(e.parent)));
