@@ -222,3 +222,7 @@ html[data-transition=theme]::view-transition-old(root),html[data-transition=them
 .gallery-lightbox .gallery-arrow{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px}
 /* Arrows sit at both ends of the row; the dots stay centred however many there are. */
 .gallery-nav{justify-content:space-between}.gallery-nav .gallery-dots{flex:1;justify-content:center;flex-wrap:wrap;min-width:0}
+/* Lightbox arrows always stay on screen: the image leaves room for them, and they sit just outside its edges. */
+.gallery-lightbox[data-slot=dialog-content]{max-width:min(calc(100vw - 160px),1600px);overflow:visible}.gallery-lightbox img{max-width:calc(100vw - 160px)}
+.gallery-lightbox .gallery-arrow{width:48px;height:48px;left:auto;right:auto;box-shadow:0 8px 24px #0006,0 0 0 1px #ffffff14}.gallery-lightbox .gallery-arrow.prev{left:-64px}.gallery-lightbox .gallery-arrow.next{right:-64px}.gallery-lightbox .gallery-arrow svg{width:22px;height:22px}
+@media(max-width:767px){.gallery-lightbox[data-slot=dialog-content]{max-width:100vw}.gallery-lightbox img{max-width:100vw;border-radius:0}.gallery-lightbox .gallery-arrow{width:40px;height:40px;opacity:.85}.gallery-lightbox .gallery-arrow.prev{left:10px}.gallery-lightbox .gallery-arrow.next{right:10px}}
