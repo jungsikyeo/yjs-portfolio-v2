@@ -9,8 +9,20 @@ export async function GET(_request:Request,{params}:{params:Promise<{key:string}
  const {key}=await params;
  const bucket=runtime.BUCKET;
  if(!KEY.test(key)||!bucket)return new Response(null,{status:404});
- const cached=await bucket.get(key);
- if(cached)return new Response(cached.body,{headers:{...IMMUTABLE,'Content-Type':cached.httpMetadata?.contentType??'application/octet-stream','ETag':cached.httpEtag}});
+ // Videos are fetched with Range requests; serve the requested slice with 206 so playback can seek.
+ const range=_request.headers.get('Range')?.match(/^bytes=(\d*)-(\d*)$/);
+ const head=await bucket.head(key);
+ if(head){
+  const type=head.httpMetadata?.contentType??'application/octet-stream';
+  if(range&&(range[1]||range[2])){
+   const start=range[1]?Number(range[1]):Math.max(0,head.size-Number(range[2]));const end=range[1]&&range[2]?Math.min(Number(range[2]),head.size-1):head.size-1;
+   if(start>end||start>=head.size)return new Response(null,{status:416,headers:{'Content-Range':`bytes */${head.size}`}});
+   const part=await bucket.get(key,{range:{offset:start,length:end-start+1}});
+   if(part)return new Response(part.body,{status:206,headers:{...IMMUTABLE,'Content-Type':type,'Content-Range':`bytes ${start}-${end}/${head.size}`,'Content-Length':String(end-start+1),'Accept-Ranges':'bytes','ETag':part.httpEtag}});
+  }
+  const cached=await bucket.get(key);
+  if(cached)return new Response(cached.body,{headers:{...IMMUTABLE,'Content-Type':type,'Content-Length':String(head.size),'Accept-Ranges':'bytes','ETag':cached.httpEtag}});
+ }
  // Only keys that the published snapshot references are fetched, so this cannot read arbitrary Notion files.
  const portfolio=await getPortfolio();
  const owner=portfolio.entries.find(e=>e.screenshots?.some(s=>s.key===key));

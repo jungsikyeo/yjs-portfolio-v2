@@ -6,7 +6,7 @@ export type DatabaseConfig={PROFILE:string;EXPERIENCE:string;PROJECT:string;SKIL
 export type BodyCache={get(id:string):{edited:string;body:string[]}|undefined;set(id:string,edited:string,body:string[]):void};
 type Row=PageRecord & {archived?:boolean;in_trash?:boolean};
 // Notion-hosted files expose a signed URL that expires within an hour; the file id in its path is stable and becomes the R2 key. External links are served as-is.
-function screenshotsOf(p:Props){return ((p.screenshots?.files??[]) as any[]).flatMap(f=>{if(f.type==='external'){const url=safeUrl(f.external?.url);return url?[{key:'',name:f.name??'',src:url}]:[]}const url=f.file?.url as string|undefined;const key=url?.match(/\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/[^/?]+(?:\?|$)/)?.[1];return url&&key?[{key,name:f.name??'',src:`/api/screenshots/${key}`}]:[]})}
+function screenshotsOf(p:Props){return ((p.screenshots?.files??[]) as any[]).flatMap(f=>{const kind=/\.(mp4|webm|mov)$/i.test(f.name??'')?'video' as const:'image' as const;if(f.type==='external'){const url=safeUrl(f.external?.url);return url?[{key:'',name:f.name??'',src:url,kind}]:[]}const url=f.file?.url as string|undefined;const key=url?.match(/\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/[^/?]+(?:\?|$)/)?.[1];return url&&key?[{key,name:f.name??'',src:`/api/screenshots/${key}`,kind}]:[]})}
 type Props=Record<string,any>;
 const text=(p:Props,k:string)=>rich(p[k]?.title??p[k]?.rich_text);
 const plain=(bs:Block[]):string[]=>bs.flatMap(b=>{const v=b[b.type] as any;return [rich(v?.rich_text),...(v?.cells?.map(rich)??[]),...plain(b.children??[])].filter(Boolean)});

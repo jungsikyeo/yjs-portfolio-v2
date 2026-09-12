@@ -132,14 +132,14 @@ function ScreenshotGallery({title,shots}:{title:string;shots:Screenshot[]}) {
  return <div className="detail-gallery" role="group" aria-label={`${title} 스크린샷`} onKeyDown={e=>{if(e.key==='ArrowLeft'){e.preventDefault();go(index-1,-1)}else if(e.key==='ArrowRight'){e.preventDefault();go(index+1,1)}}}>
   <div className="detail-shot">
    <div className="gallery-track" style={{transform:`translateX(-${index*100}%)`}}>
-    {shots.map((shot,i)=><button type="button" className="gallery-slide" key={shot.src} aria-hidden={i!==index} tabIndex={i===index?0:-1} aria-label={`${label(i)} 크게 보기`} onClick={()=>setOpen(true)}><img src={shot.src} alt={label(i)} loading={i===0?'eager':'lazy'} decoding="async"/></button>)}
+    {shots.map((shot,i)=><button type="button" className="gallery-slide" key={shot.src} aria-hidden={i!==index} tabIndex={i===index?0:-1} aria-label={`${label(i)} 크게 보기`} onClick={()=>setOpen(true)}>{shot.kind==='video'?<video src={shot.src} muted autoPlay loop playsInline preload="metadata" aria-label={label(i)}/>:<img src={shot.src} alt={label(i)} loading={i===0?'eager':'lazy'} decoding="async"/>}</button>)}
    </div>
   </div>
   {count>1&&<div className="gallery-nav"><button type="button" className="gallery-arrow" aria-label="이전 화면" onClick={()=>go(index-1,-1)}><ChevronLeft size={15}/></button><div role="tablist" aria-label="화면 선택" className="gallery-dots">{shots.map((shot,i)=><button type="button" key={shot.src} role="tab" aria-selected={i===index} aria-label={label(i)} onClick={()=>setIndex(i)}/>)}</div><button type="button" className="gallery-arrow" aria-label="다음 화면" onClick={()=>go(index+1,1)}><ChevronRight size={15}/></button></div>}
   <Dialog open={open} onOpenChange={setOpen}>
    <DialogContent className="gallery-lightbox" showCloseButton={false} onClick={()=>setOpen(false)}>
     <DialogTitle className="sr-only">{label(index)}</DialogTitle>
-    <img key={shots[index].src} className={direction>0?'enter-next':'enter-prev'} src={shots[index].src} alt={label(index)} decoding="async"/>
+    {shots[index].kind==='video'?<video key={shots[index].src} className={direction>0?'enter-next':'enter-prev'} src={shots[index].src} controls autoPlay loop playsInline aria-label={label(index)} onClick={e=>e.stopPropagation()}/>:<img key={shots[index].src} className={direction>0?'enter-next':'enter-prev'} src={shots[index].src} alt={label(index)} decoding="async"/>}
     {count>1&&<><button type="button" className="gallery-arrow prev" aria-label="이전 화면" onClick={e=>{e.stopPropagation();go(index-1,-1)}}><ChevronLeft size={20}/></button><button type="button" className="gallery-arrow next" aria-label="다음 화면" onClick={e=>{e.stopPropagation();go(index+1,1)}}><ChevronRight size={20}/></button></>}
     <span className="gallery-caption mono">{index+1} / {count} · 클릭 또는 Esc로 닫기</span>
    </DialogContent>
