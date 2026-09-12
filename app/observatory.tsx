@@ -1,9 +1,11 @@
 'use client';
 import {useState,useMemo,useEffect,useRef} from 'react';
-import {Activity,ArrowUpRight,Network,Briefcase,Layers,Code2,Search,Plus,Minus,Maximize,RotateCcw,List,ChevronRight,ArrowRight,Database,Mail,Monitor,Server,Wrench,AppWindow,GraduationCap,Award,type LucideIcon} from 'lucide-react';
+import {Activity,ArrowUpRight,Network,Briefcase,Layers,Code2,Search,Plus,Minus,Maximize,RotateCcw,List,ChevronRight,ChevronLeft,ArrowRight,Database,Mail,Monitor,Server,Wrench,AppWindow,GraduationCap,Award,type LucideIcon} from 'lucide-react';
 import {Tabs,TabsList,TabsTrigger,TabsContent} from '@/components/ui/tabs';
 import {SidebarProvider,Sidebar,SidebarContent,SidebarHeader,SidebarFooter,SidebarMenu,SidebarMenuItem,SidebarMenuButton,SidebarTrigger} from '@/components/ui/sidebar';
 import {Sheet,SheetContent,SheetHeader,SheetTitle,SheetDescription} from '@/components/ui/sheet';
+import {Dialog,DialogContent,DialogTitle} from '@/components/ui/dialog';
+import type {Screenshot} from '@/lib/portfolio';
 import {transitionView,scrollToTop} from '@/lib/motion';
 import {ThemeControls} from './theme-controls';
 import {type Portfolio,type Entry,edges} from '@/lib/portfolio';
@@ -102,7 +104,7 @@ function DetailContent({entry}:{entry:Entry}) {
  {metadata.length>0&&<dl className="detail-facts">{metadata.map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>}
  {entry.kind!=='experience'&&<div className="project-evidence"><span><strong>{entry.tags.length}</strong>연결 기술</span>{entry.links?.length? <span><strong>{entry.links.length}</strong>관련 자료</span>:null}</div>}
  <Tabs value={tab} onValueChange={value=>transitionView(()=>setTab(value))} className="case-tabs"><TabsList aria-label="프로젝트 상세 구성"><TabsTrigger value="overview">개요</TabsTrigger>{process.length>0&&<TabsTrigger value="process">구현 과정</TabsTrigger>}{decisions.length>0&&<TabsTrigger value="decisions">기술적 판단</TabsTrigger>}</TabsList>
- <TabsContent value="overview">{entry.screenshots?.map(shot=><figure className="detail-shot" key={shot.src}><img src={shot.src} alt={`${entry.title} 실제 화면`} loading="lazy" decoding="async"/></figure>)}{overview.length?renderBlocks(overview):<p>{entry.subtitle}</p>}</TabsContent>
+ <TabsContent value="overview">{entry.screenshots?.length?<ScreenshotGallery title={entry.title} shots={entry.screenshots}/>:null}{overview.length?renderBlocks(overview):<p>{entry.subtitle}</p>}</TabsContent>
  {process.length>0&&<TabsContent value="process"><p className="process-caption">주요 작업 · 항목을 펼쳐 내용을 확인하세요</p><div className="process-timeline">{process.flatMap(b=>b.lines).map((line,i)=><details key={i} open={i===0}><summary><span>{String(i+1).padStart(2,'0')}</span><strong>{line.length>26?line.slice(0,26)+'…':line}</strong></summary>{line.length>26&&<p>{line}</p>}</details>)}</div></TabsContent>}
  {decisions.length>0&&<TabsContent value="decisions">{renderBlocks(decisions)}</TabsContent>}
  </Tabs>
@@ -116,4 +118,30 @@ function ProjectSchedule({entries,selected,onSelect}:{entries:Entry[];selected:s
  const start=Math.min(...rows.map(r=>r.start));const end=Math.max(...rows.map(r=>r.end))+1;const span=end-start;
  const label=(n:number)=>`${Math.floor(n/12)}.${String(n%12+1).padStart(2,'0')}`;
  return <section className="project-schedule"><header><h3>프로젝트 기간</h3><span>노션 등록 기간 · 월 단위</span></header><div className="schedule-scroll"><div className="schedule-axis"><span>프로젝트</span><div>{[0,.25,.5,.75,1].map(r=><span key={r}>{label(Math.min(end-1,Math.floor(start+span*r)))}</span>)}</div></div>{rows.map(({entry,start:from,end:to,ongoing})=><button className="schedule-row" key={entry.id} aria-pressed={selected===entry.id} onClick={()=>onSelect(entry.id)}><span><strong>{entry.title}</strong><small>{entry.period}</small></span><div className="schedule-track"><span className={`schedule-bar ${ongoing?'ongoing':''}`} style={{left:`${(from-start)/span*100}%`,width:`${(to-from+1)/span*100}%`}}/></div></button>)}</div></section>;
+}
+
+// A compact slideshow for project screenshots; clicking a slide opens it full size in a nested dialog.
+function ScreenshotGallery({title,shots}:{title:string;shots:Screenshot[]}) {
+ const [index,setIndex]=useState(0);
+ const [open,setOpen]=useState(false);
+ const count=shots.length;
+ const go=(next:number)=>setIndex((next+count)%count);
+ const label=(i:number)=>`${title} 실제 화면 ${i+1} / ${count}`;
+ return <div className="detail-gallery" role="group" aria-label={`${title} 스크린샷`} onKeyDown={e=>{if(e.key==='ArrowLeft'){e.preventDefault();go(index-1)}else if(e.key==='ArrowRight'){e.preventDefault();go(index+1)}}}>
+  <div className="detail-shot">
+   <div className="gallery-track" style={{transform:`translateX(-${index*100}%)`}}>
+    {shots.map((shot,i)=><button type="button" className="gallery-slide" key={shot.src} aria-hidden={i!==index} tabIndex={i===index?0:-1} aria-label={`${label(i)} 크게 보기`} onClick={()=>setOpen(true)}><img src={shot.src} alt={label(i)} loading={i===0?'eager':'lazy'} decoding="async"/></button>)}
+   </div>
+   {count>1&&<><button type="button" className="gallery-arrow prev" aria-label="이전 화면" onClick={()=>go(index-1)}><ChevronLeft size={16}/></button><button type="button" className="gallery-arrow next" aria-label="다음 화면" onClick={()=>go(index+1)}><ChevronRight size={16}/></button></>}
+  </div>
+  {count>1&&<div className="gallery-dots" role="tablist" aria-label="화면 선택">{shots.map((shot,i)=><button type="button" key={shot.src} role="tab" aria-selected={i===index} aria-label={label(i)} onClick={()=>setIndex(i)}/>)}<span className="mono">{index+1} / {count}</span></div>}
+  <Dialog open={open} onOpenChange={setOpen}>
+   <DialogContent className="gallery-lightbox" showCloseButton={false} onClick={()=>setOpen(false)}>
+    <DialogTitle className="sr-only">{label(index)}</DialogTitle>
+    <img src={shots[index].src} alt={label(index)} decoding="async"/>
+    {count>1&&<><button type="button" className="gallery-arrow prev" aria-label="이전 화면" onClick={e=>{e.stopPropagation();go(index-1)}}><ChevronLeft size={20}/></button><button type="button" className="gallery-arrow next" aria-label="다음 화면" onClick={e=>{e.stopPropagation();go(index+1)}}><ChevronRight size={20}/></button></>}
+    <span className="gallery-caption mono">{index+1} / {count} · 클릭 또는 Esc로 닫기</span>
+   </DialogContent>
+  </Dialog>
+ </div>;
 }
