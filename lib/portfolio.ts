@@ -1,5 +1,7 @@
 export type Kind = 'person' | 'experience' | 'project' | 'skill';
-export type Entry = {id:string; kind:Kind; title:string; subtitle:string; body:string[]; parent?:string; parents?:string[]; tags:string[]; url?:string; links?:string[]; period?:string; category?:string; role?:string; featured?:boolean};
+// A screenshot copied from Notion into R2; `source` is the short-lived Notion URL and is dropped once mirrored.
+export type Screenshot = {key:string; name:string; src:string; source?:string};
+export type Entry = {id:string; kind:Kind; title:string; subtitle:string; body:string[]; parent?:string; parents?:string[]; tags:string[]; url?:string; links?:string[]; period?:string; category?:string; role?:string; featured?:boolean; screenshots?:Screenshot[]};
 export type Portfolio = {name:string; role:string; intro:string; entries:Entry[]; demo:boolean; syncedAt:string|null; status:'demo'|'ready'|'stale'|'error'; message?:string; email?:string; links?:{label:string;url:string}[]; credentials?:{title:string;issuer:string;date:string}[]};
 export const sourceUrl='https://app.notion.com/p/3c404ce782f080658de5e1e63f28e24d';
 export const demo:Portfolio={name:'커리어를 연결하고,\n경험을 관측합니다.',role:'CAREER OBSERVATORY',intro:'어떤 문제를 만났고, 어떻게 해결했는지. 경력과 프로젝트, 기술의 연결에서 전문성을 탐색하세요.',demo:true,syncedAt:null,status:'demo',entries:[

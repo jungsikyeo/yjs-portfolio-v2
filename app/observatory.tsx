@@ -102,7 +102,7 @@ function DetailContent({entry}:{entry:Entry}) {
  {metadata.length>0&&<dl className="detail-facts">{metadata.map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>}
  {entry.kind!=='experience'&&<div className="project-evidence"><span><strong>{entry.tags.length}</strong>연결 기술</span>{entry.links?.length? <span><strong>{entry.links.length}</strong>관련 자료</span>:null}</div>}
  <Tabs value={tab} onValueChange={value=>transitionView(()=>setTab(value))} className="case-tabs"><TabsList aria-label="프로젝트 상세 구성"><TabsTrigger value="overview">개요</TabsTrigger>{process.length>0&&<TabsTrigger value="process">구현 과정</TabsTrigger>}{decisions.length>0&&<TabsTrigger value="decisions">기술적 판단</TabsTrigger>}</TabsList>
- <TabsContent value="overview">{overview.length?renderBlocks(overview):<p>{entry.subtitle}</p>}</TabsContent>
+ <TabsContent value="overview">{entry.screenshots?.map(shot=><figure className="detail-shot" key={shot.src}><img src={shot.src} alt={`${entry.title} 실제 화면`} loading="lazy" decoding="async"/></figure>)}{overview.length?renderBlocks(overview):<p>{entry.subtitle}</p>}</TabsContent>
  {process.length>0&&<TabsContent value="process"><p className="process-caption">주요 작업 · 항목을 펼쳐 내용을 확인하세요</p><div className="process-timeline">{process.flatMap(b=>b.lines).map((line,i)=><details key={i} open={i===0}><summary><span>{String(i+1).padStart(2,'0')}</span><strong>{line.length>26?line.slice(0,26)+'…':line}</strong></summary>{line.length>26&&<p>{line}</p>}</details>)}</div></TabsContent>}
  {decisions.length>0&&<TabsContent value="decisions">{renderBlocks(decisions)}</TabsContent>}
  </Tabs>

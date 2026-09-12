@@ -50,7 +50,7 @@ npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-
 |---|---|
 | Profile | name, headline, summary, email, github, linkedin, blog |
 | Experience | company, role, period, summary, stack, order, domain, featured(선택) |
-| Project | title, oneLiner, role, period, stack, experience(Relation, 여러 개 가능), featured, order, repoUrls, demoUrl, docsUrl, achievements |
+| Project | title, oneLiner, role, period, stack, experience(Relation, 여러 개 가능), featured, order, repoUrls, demoUrl, docsUrl, achievements, screenshots(Files, 선택) |
 | Skill | name, category, order |
 | Credential | title, issuer, date |
 
@@ -114,6 +114,7 @@ Experience DB에 `featured` 체크박스를 추가하면 체크된 회사와 그
 - `lib/notion.ts`: 서버 D1 저장소와 어댑터 연결
 - `app/observatory.tsx`: 화면과 탐색 상태
 - `db/schema.ts`, `drizzle/`: 영구 스냅샷 스키마 및 마이그레이션
+- `app/api/screenshots/[key]/route.ts`: Project DB의 `screenshots` 파일 속성에 올린 이미지를 동기화 때 R2(`BUCKET`)로 복사해 서빙합니다. Notion 파일 URL은 1시간 뒤 만료되므로 직접 쓰지 않습니다. 업로드 전에 개인 정보 영역을 흐리게 처리하고 폭 1600px 정도로 줄여 올리세요.
 
 ## 배포 (Cloudflare Workers)
 
