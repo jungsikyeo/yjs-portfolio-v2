@@ -230,3 +230,5 @@ html[data-transition=theme]::view-transition-old(root),html[data-transition=them
 @keyframes lightbox-from-right{from{opacity:0;transform:translateX(28px) scale(.985)}to{opacity:1;transform:none}}@keyframes lightbox-from-left{from{opacity:0;transform:translateX(-28px) scale(.985)}to{opacity:1;transform:none}}
 .gallery-lightbox img.enter-next{animation:lightbox-from-right 320ms var(--motion-ease) both}.gallery-lightbox img.enter-prev{animation:lightbox-from-left 320ms var(--motion-ease) both}
 @media(prefers-reduced-motion:reduce){.gallery-lightbox img.enter-next,.gallery-lightbox img.enter-prev{animation:none}}
+/* Every slide shares one landscape frame; portrait screenshots shrink to fit its height (the lightbox shows them full size). */
+.detail-body .gallery-slide{aspect-ratio:1600/950;display:flex;align-items:center;justify-content:center;background:var(--clay-down)}.gallery-slide img,.detail-body .gallery-slide img{width:100%;height:100%;object-fit:contain;background:transparent}
