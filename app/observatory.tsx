@@ -132,9 +132,8 @@ function ScreenshotGallery({title,shots}:{title:string;shots:Screenshot[]}) {
    <div className="gallery-track" style={{transform:`translateX(-${index*100}%)`}}>
     {shots.map((shot,i)=><button type="button" className="gallery-slide" key={shot.src} aria-hidden={i!==index} tabIndex={i===index?0:-1} aria-label={`${label(i)} 크게 보기`} onClick={()=>setOpen(true)}><img src={shot.src} alt={label(i)} loading={i===0?'eager':'lazy'} decoding="async"/></button>)}
    </div>
-   {count>1&&<><button type="button" className="gallery-arrow prev" aria-label="이전 화면" onClick={()=>go(index-1)}><ChevronLeft size={16}/></button><button type="button" className="gallery-arrow next" aria-label="다음 화면" onClick={()=>go(index+1)}><ChevronRight size={16}/></button></>}
   </div>
-  {count>1&&<div className="gallery-dots" role="tablist" aria-label="화면 선택">{shots.map((shot,i)=><button type="button" key={shot.src} role="tab" aria-selected={i===index} aria-label={label(i)} onClick={()=>setIndex(i)}/>)}<span className="mono">{index+1} / {count}</span></div>}
+  {count>1&&<div className="gallery-nav"><button type="button" className="gallery-arrow" aria-label="이전 화면" onClick={()=>go(index-1)}><ChevronLeft size={15}/></button><div role="tablist" aria-label="화면 선택" className="gallery-dots">{shots.map((shot,i)=><button type="button" key={shot.src} role="tab" aria-selected={i===index} aria-label={label(i)} onClick={()=>setIndex(i)}/>)}</div><button type="button" className="gallery-arrow" aria-label="다음 화면" onClick={()=>go(index+1)}><ChevronRight size={15}/></button><span className="mono">{index+1} / {count}</span></div>}
   <Dialog open={open} onOpenChange={setOpen}>
    <DialogContent className="gallery-lightbox" showCloseButton={false} onClick={()=>setOpen(false)}>
     <DialogTitle className="sr-only">{label(index)}</DialogTitle>
