@@ -2,6 +2,8 @@ import {rich,safeUrl,type Block,type PageRecord} from './notion-parser';
 import {type Entry,type Portfolio} from './portfolio';
 import {createNotionClient,NotionError} from './notion-client';
 export type DatabaseConfig={PROFILE:string;EXPERIENCE:string;PROJECT:string;SKILL:string;CREDENTIAL?:string};
+// Bodies of pages whose last_edited_time is unchanged come from this cache instead of the blocks API, keeping a sync to ~11 requests.
+export type BodyCache={get(id:string):{edited:string;body:string[]}|undefined;set(id:string,edited:string,body:string[]):void};
 type Row=PageRecord & {archived?:boolean;in_trash?:boolean};
 // Notion-hosted files expose a signed URL that expires within an hour; the file id in its path is stable and becomes the R2 key. External links are served as-is.
 function screenshotsOf(p:Props){return ((p.screenshots?.files??[]) as any[]).flatMap(f=>{if(f.type==='external'){const url=safeUrl(f.external?.url);return url?[{key:'',name:f.name??'',src:url}]:[]}const url=f.file?.url as string|undefined;const key=url?.match(/\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/[^/?]+(?:\?|$)/)?.[1];return url&&key?[{key,name:f.name??'',src:`/api/screenshots/${key}`}]:[]})}
@@ -11,7 +13,7 @@ const plain=(bs:Block[]):string[]=>bs.flatMap(b=>{const v=b[b.type] as any;retur
 const period=(p:Props)=>{const d=p.period?.date;return d?`${d.start.slice(0,7).replace('-','.')} — ${d.end?d.end.slice(0,7).replace('-','.'):'현재'}`:''};
 const names=(p:Props)=>p.stack?.multi_select?.map((v:any)=>v.name)??[];
 const same=(a:string,b:string)=>a.replaceAll('-','')===b.replaceAll('-','');
-export async function loadWorkspace(client:ReturnType<typeof createNotionClient>,root:string,config:DatabaseConfig):Promise<Portfolio>{
+export async function loadWorkspace(client:ReturnType<typeof createNotionClient>,root:string,config:DatabaseConfig,cache?:BodyCache):Promise<Portfolio>{
  const rootPage=await client.request(`pages/${root}`);if(rootPage.archived||rootPage.in_trash)throw new NotionError(410);
  const buckets:Record<string,{page:Row;body:string[]}[]>={};
  for(const [kind,id] of Object.entries(config)){
@@ -22,7 +24,10 @@ export async function loadWorkspace(client:ReturnType<typeof createNotionClient>
   buckets[kind]=[];for(const page of rows.sort((a,b)=>(a.properties.order as any)?.number-(b.properties.order as any)?.number)){
    if(page.archived||page.in_trash||page.properties.Published?.checkbox===false)continue;
    // These database IDs were explicitly supplied as portfolio sources. An optional Published=false opts a row out.
-   buckets[kind].push({page,body:plain(await client.blocks(page.id))});
+   const edited=(page as any).last_edited_time as string|undefined;const hit=edited?cache?.get(page.id):undefined;
+   const body=hit&&hit.edited===edited?hit.body:plain(await client.blocks(page.id));
+   if(edited)cache?.set(page.id,edited,body);
+   buckets[kind].push({page,body});
   }
  }
  const profile=buckets.PROFILE?.[0];if(!profile)throw new Error('Profile is missing.');

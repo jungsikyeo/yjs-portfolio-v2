@@ -23,3 +23,15 @@ test('existing workspace mapping respects root, explicit relations and optional 
  const result=await loadWorkspace(client as any,'root',{PROFILE:'PROFILE',EXPERIENCE:'EXPERIENCE',PROJECT:'PROJECT',SKILL:'SKILL'});assert.equal(result.demo,false);assert.equal(result.entries.length,4);assert.equal(result.entries.find(e=>e.id==='p')?.parent,'job');assert.deepEqual(result.entries.find(e=>e.id==='p')?.tags,['ts']);assert.equal(result.entries.find(e=>e.id==='ts')?.subtitle,'언어');
  await assert.rejects(()=>loadWorkspace({...client,request:async(path:string)=>path.startsWith('databases/')?{parent:{type:'page_id',page_id:'other'}}:{}} as any,'root',{PROFILE:'PROFILE',EXPERIENCE:'EXPERIENCE',PROJECT:'PROJECT',SKILL:'SKILL'}));
 });
+
+test('unchanged pages reuse cached bodies instead of calling the blocks API',async()=>{
+ const prop=(s:string)=>({type:'rich_text',rich_text:[{plain_text:s}]});
+ const rows:Record<string,any[]>={PROFILE:[{id:'me',last_edited_time:'t1',properties:{name:prop('이름'),headline:prop('엔지니어'),summary:prop('소개')}}],EXPERIENCE:[{id:'job',last_edited_time:'t1',properties:{company:prop('회사')}}],PROJECT:[],SKILL:[]};
+ let calls=0;
+ const client={request:async(path:string)=>{if(path==='pages/root')return {};if(path.startsWith('databases/'))return {parent:{type:'page_id',page_id:'root'},data_sources:[{id:path.split('/')[1]}]};return {results:rows[path.split('/')[1]],has_more:false}},blocks:async()=>{calls++;return [{type:'paragraph',paragraph:{rich_text:[{plain_text:'본문'}]}}]}};
+ const store=new Map<string,{edited:string;body:string[]}>();const cache={get:(id:string)=>store.get(id),set:(id:string,edited:string,body:string[])=>store.set(id,{edited,body})};
+ const config={PROFILE:'PROFILE',EXPERIENCE:'EXPERIENCE',PROJECT:'PROJECT',SKILL:'SKILL'};
+ await loadWorkspace(client as any,'root',config,cache);assert.equal(calls,2);
+ const again=await loadWorkspace(client as any,'root',config,cache);assert.equal(calls,2);assert.deepEqual(again.entries.find(e=>e.id==='job')?.body,['본문']);
+ rows.EXPERIENCE[0].last_edited_time='t2';await loadWorkspace(client as any,'root',config,cache);assert.equal(calls,3);
+});

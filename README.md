@@ -113,7 +113,7 @@ Experience DB에 `featured` 체크박스를 추가하면 체크된 회사와 그
 - `lib/sync.ts`: 캐시 재검증과 실패 정책 (독립 테스트 가능)
 - `lib/notion.ts`: 서버 D1 저장소와 어댑터 연결
 - `app/observatory.tsx`: 화면과 탐색 상태
-- `db/schema.ts`, `drizzle/`: 영구 스냅샷 스키마 및 마이그레이션
+- `db/schema.ts`, `drizzle/`: 영구 스냅샷 스키마 및 마이그레이션. `page_bodies` 테이블은 페이지별 본문을 `last_edited_time`과 함께 보관해, 바뀌지 않은 페이지는 블록 API를 다시 호출하지 않습니다(동기화당 약 47회 → 11회).
 - `app/api/screenshots/[key]/route.ts`: Project DB의 `screenshots` 파일 속성에 올린 이미지를 동기화 때 R2(`BUCKET`)로 복사해 서빙합니다. Notion 파일 URL은 1시간 뒤 만료되므로 직접 쓰지 않습니다. 업로드 전에 개인 정보 영역을 흐리게 처리하고 폭 1600px 정도로 줄여 올리세요.
 
 ## 배포 (Cloudflare Workers)
