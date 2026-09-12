@@ -10,6 +10,8 @@ export async function synchronize(store:Store,load:()=>Promise<Portfolio>,now=Da
  if(!await store.lock(now))return old?.data??failed('첫 동기화가 진행 중입니다.');
  try{const data=await load();data.syncedAt=new Date(now+Date.now()-started).toISOString();data.status='ready';await store.write({data,nextAttempt:now+ttl});return data}catch(error){
   const denied=error instanceof NotionError&&[401,403,404,410].includes(error.status);
+  // Keep the failure visible in Worker logs; the UI only shows a generic notice.
+  console.error("notion sync failed",error instanceof NotionError?{status:error.status,retryAfter:error.retryAfter,message:error.message}:error instanceof Error?{message:error.message,stack:error.stack}:error);
   // Explicit access removal must not keep serving previously cached private content.
   const result=denied?{...failed('페이지 접근 권한이 없거나 삭제되었습니다.'),entries:[],name:'이력 접근이 중단되었습니다',intro:'원본 페이지와 연결 권한을 확인해 주세요.',status:'error' as const,syncedAt:null}:failed('노션 갱신에 실패했습니다. 자동으로 다시 시도합니다.');
   await store.write({data:result,nextAttempt:now+Math.max(60000,error instanceof NotionError?error.retryAfter:0)});return result

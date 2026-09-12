@@ -50,7 +50,7 @@ npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-
 |---|---|
 | Profile | name, headline, summary, email, github, linkedin, blog |
 | Experience | company, role, period, summary, stack, order, domain, featured(선택) |
-| Project | title, oneLiner, role, period, stack, experience(Relation), featured, order, repoUrls, demoUrl, docsUrl, achievements |
+| Project | title, oneLiner, role, period, stack, experience(Relation, 여러 개 가능), featured, order, repoUrls, demoUrl, docsUrl, achievements |
 | Skill | name, category, order |
 | Credential | title, issuer, date |
 

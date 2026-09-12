@@ -200,3 +200,6 @@ html[data-transition=theme]::view-transition-old(root),html[data-transition=them
 .empty button:hover,.empty button:focus-visible{color:var(--aqua);box-shadow:var(--clay-inset)}
 /* Compact project nodes keep the overview map inside the standard box. */
 .node.compact{width:258px;height:40px;padding:6px 10px;gap:8px}.node.compact>span:nth-child(2){display:flex;align-items:baseline;gap:8px;min-width:0;flex:1}.node.compact strong{max-width:none;min-width:0;flex:1;font-size:12px}.node.compact small{white-space:nowrap;font-size:9px;line-height:1}.node.compact .node-symbol{font-size:15px}
+/* Status notice and badge use the clay surface in every state, not the v1 dark panel. */
+.notice{background:var(--clay);border:0;box-shadow:var(--clay-inset);color:var(--ink-secondary)}.notice>span{color:#b38b59}.notice a{color:var(--ink)}
+.env-badge{background:var(--clay);border:0;box-shadow:var(--clay-inset);color:#b38b59;padding:9px 14px}.env-badge .status-dot{background:#b38b59}.env-badge.healthy .status-dot{background:var(--aqua)}

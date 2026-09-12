@@ -12,6 +12,8 @@ const kinds={person:'프로필',experience:'경력',project:'프로젝트',skill
 // Map node boxes: full nodes hold a title and a caption, compact nodes a single line.
 const NODE_HEIGHT=78,COMPACT_HEIGHT=50,COMPACT_PITCH=50,COMPACT_WIDTH=270;
 const anchor=(p:{compact?:boolean})=>p.compact?25:34;
+// A project may belong to several companies; the first listed one decides where it is grouped.
+const parentsOf=(e:Entry)=>e.parents??(e.parent?[e.parent]:[]);
 
 export default function Observatory({initial}:{initial:Portfolio}){
 const [sourceData,setData]=useState(initial),[section,setSection]=useState('Overview'),[query,setQuery]=useState(''),[selected,setSelected]=useState<string|null>(null),[view,setView]=useState('map'),[zoom,setZoom]=useState(1),[pan,setPan]=useState({x:0,y:0}),[detail,setDetail]=useState(false),[scope,setScope]=useState('all'); const drag=useRef<{x:number;y:number}|null>(null); const graphRef=useRef<HTMLDivElement>(null); const [motionPaused,setMotionPaused]=useState(false);
@@ -22,7 +24,7 @@ const data=useMemo(()=>{
  const companies=experiences.some(e=>e.featured!==undefined)?experiences.filter(e=>e.featured):experiences;
  const companyIds=new Set(companies.map(e=>e.id));
  const allCompanyIds=new Set(sourceData.entries.filter(e=>e.kind==='experience').map(e=>e.id));
- const projects=sourceData.entries.filter(e=>e.kind==='project'&&(!e.parent||!allCompanyIds.has(e.parent)||companyIds.has(e.parent)));
+ const projects=sourceData.entries.filter(e=>{if(e.kind!=='project')return false;const ps=parentsOf(e);return !ps.some(id=>allCompanyIds.has(id))||ps.some(id=>companyIds.has(id))});
  const retained=new Set([...companies,...projects].map(e=>e.id));
  const skills=new Set([...companies,...projects].flatMap(e=>e.tags));
  return {...sourceData,entries:sourceData.entries.filter(e=>e.kind==='person'||retained.has(e.id)||(e.kind==='skill'&&skills.has(e.id)))};
@@ -31,7 +33,7 @@ const active=data.entries.find(e=>e.id===selected);const connections=useMemo(()=
 const visible=useMemo(()=>data.entries.filter(e=>`${e.title} ${e.subtitle} ${e.tags.join(' ')} ${e.body.join(' ')}`.toLowerCase().includes(query.toLowerCase())),[data,query,section]);
 const related=new Set([selected,...connections.filter(e=>e.from===selected||e.to===selected).flatMap(e=>[e.from,e.to])]);
 const focusProject=data.entries.find(e=>e.id===scope&&e.kind==='project')??data.entries.find(e=>e.featured)??data.entries.find(e=>e.kind==='project');
-const graphEntries=useMemo(()=>{if(!focusProject)return data.entries.filter(e=>e.kind!=='skill');if(scope==='all')return data.entries.filter(e=>e.kind!=='skill');const ids=new Set([focusProject.id,focusProject.parent,...focusProject.tags,...data.entries.filter(e=>e.kind==='person').map(e=>e.id)]);return data.entries.filter(e=>ids.has(e.id))},[data,scope,focusProject,query,section]);
+const graphEntries=useMemo(()=>{if(!focusProject)return data.entries.filter(e=>e.kind!=='skill');if(scope==='all')return data.entries.filter(e=>e.kind!=='skill');const ids=new Set([focusProject.id,...parentsOf(focusProject),...focusProject.tags,...data.entries.filter(e=>e.kind==='person').map(e=>e.id)]);return data.entries.filter(e=>ids.has(e.id))},[data,scope,focusProject,query,section]);
 const graphEdges=connections.filter(e=>graphEntries.some(n=>n.id===e.from)&&graphEntries.some(n=>n.id===e.to));
 const overviewMap=scope==='all';
 const layout=useMemo(()=>{
@@ -41,7 +43,7 @@ const layout=useMemo(()=>{
   // each company sits beside the centre of its own project group.
   const companies=graphEntries.filter(e=>e.kind==='experience');
   const projects=graphEntries.filter(e=>e.kind==='project');
-  const buckets=[...companies.map(company=>({company,projects:projects.filter(e=>e.parent===company.id)})),{company:null,projects:projects.filter(e=>!companies.some(c=>c.id===e.parent))}];
+  const buckets=[...companies.map(company=>({company,projects:projects.filter(e=>parentsOf(e).find(id=>companies.some(c=>c.id===id))===company.id)})),{company:null,projects:projects.filter(e=>!parentsOf(e).some(id=>companies.some(c=>c.id===id)))}];
   let projectY=60,companyBottom=60;
   for(const bucket of buckets){
    if(!bucket.company&&!bucket.projects.length)continue;
