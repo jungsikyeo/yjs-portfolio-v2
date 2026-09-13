@@ -2,7 +2,6 @@ import {env} from 'cloudflare:workers';
 import {validateContact,contactEmail} from '@/lib/contact';
 import {getPortfolio} from '@/lib/notion';
 import {EmailMessage} from 'cloudflare:email';
-import {createMimeMessage} from 'mimetext';
 // Messages are always persisted to D1 first, then relayed: through Cloudflare Email Routing when the
 // EMAIL binding exists (free, same zone), else through Resend when a key is configured. Sending is
 // best-effort: a failed relay still leaves the message in the table.
@@ -10,6 +9,14 @@ const runtime=env as unknown as {DB?:D1Database;EMAIL?:SendEmail;RESEND_API_KEY?
 const ROUTING_FROM='contact@yeojs.dev',ROUTING_TO='ssamzhang@kakao.com';
 const SITE='portfolio.yeojs.dev';
 const PER_IP_HOUR=5,GLOBAL_DAY=40;
+// A minimal RFC 5322 text/plain message. Non-ASCII header values go out as UTF-8 encoded words and the
+// body as base64, so Korean subjects and names survive every relay in between.
+const b64=(v:string)=>btoa(String.fromCharCode(...new TextEncoder().encode(v)));
+const encWord=(v:string)=>/^[\x20-\x7e]*$/.test(v)?v:`=?UTF-8?B?${b64(v)}?=`;
+function rawMime({from,fromName,to,replyTo,subject,text}:{from:string;fromName:string;to:string;replyTo:string;subject:string;text:string}){
+ const body=b64(text).replace(/(.{76})/g,'$1\r\n');
+ return [`From: ${encWord(fromName)} <${from}>`,`To: <${to}>`,`Reply-To: <${replyTo}>`,`Subject: ${encWord(subject)}`,`Date: ${new Date().toUTCString()}`,`Message-ID: <${crypto.randomUUID()}@yeojs.dev>`,'MIME-Version: 1.0','Content-Type: text/plain; charset=UTF-8','Content-Transfer-Encoding: base64','',body].join('\r\n');
+}
 const json=(body:unknown,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 async function ipHash(request:Request){const ip=request.headers.get('CF-Connecting-IP')??'unknown';const bytes=new TextEncoder().encode(`${runtime.CONTACT_SALT??'portfolio'}:${ip}`);const digest=await crypto.subtle.digest('SHA-256',bytes);return [...new Uint8Array(digest)].slice(0,16).map(b=>b.toString(16).padStart(2,'0')).join('');}
 export async function POST(request:Request){
@@ -26,10 +33,11 @@ export async function POST(request:Request){
  const inserted=await db.prepare('INSERT INTO contact_messages (created_at,ip_hash,name,email,company,message,sent) VALUES (?,?,?,?,?,?,0)').bind(now,ip,value.name,value.email,value.company??null,value.message).run();
  const id=inserted.meta.last_row_id;
  if(runtime.EMAIL){
-  const {subject,text}=contactEmail(value,SITE);
-  const mime=createMimeMessage();mime.setSender({name:'Portfolio 연락하기',addr:ROUTING_FROM});mime.setRecipient(ROUTING_TO);mime.setHeader('Reply-To',value.email);mime.setSubject(subject);mime.addMessage({contentType:'text/plain',data:text});
-  try{await runtime.EMAIL.send(new EmailMessage(ROUTING_FROM,ROUTING_TO,mime.asRaw()));await db.prepare('UPDATE contact_messages SET sent=1 WHERE id=?').bind(id).run();return json({ok:true,delivered:true});}
-  catch(e){console.error('email routing send failed',e instanceof Error?e.message:e);}
+  try{
+   const {subject,text}=contactEmail(value,SITE);
+   await runtime.EMAIL.send(new EmailMessage(ROUTING_FROM,ROUTING_TO,rawMime({from:ROUTING_FROM,fromName:'Portfolio 연락하기',to:ROUTING_TO,replyTo:value.email,subject,text})));
+   await db.prepare('UPDATE contact_messages SET sent=1 WHERE id=?').bind(id).run();return json({ok:true,delivered:true});
+  }catch(e){console.error('email routing send failed',e instanceof Error?e.message:e);}
  }
  // Without a relay key there is nothing more to do; only then is the (possibly heavy) portfolio lookup for the fallback address worth it.
  if(!runtime.RESEND_API_KEY)return json({ok:true,delivered:false});
