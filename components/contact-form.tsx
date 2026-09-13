@@ -7,6 +7,9 @@ import {validateContact,LIMITS} from '@/lib/contact';
 // The mailto link stays as a fallback for people who prefer their own mail client.
 export function ContactForm({email,open,onOpenChange}:{email?:string;open:boolean;onOpenChange:(open:boolean)=>void}){
  const [state,setState]=useState<'idle'|'sending'|'sent'|'saved'|'error'>('idle'),[error,setError]=useState('');
+ const reset=()=>{setState('idle');setError('');};
+ // Every way of closing goes through here so the next open starts on a fresh form.
+ const close=()=>{onOpenChange(false);reset();};
  async function submit(e:FormEvent<HTMLFormElement>){
   e.preventDefault();
   const form=e.currentTarget,payload=Object.fromEntries(new FormData(form).entries());
@@ -20,9 +23,9 @@ export function ContactForm({email,open,onOpenChange}:{email?:string;open:boolea
    setState(body.delivered===false?'saved':'sent');form.reset();
   }catch{setState('error');setError('네트워크 오류로 전송하지 못했습니다.');}
  }
- return <Sheet open={open} onOpenChange={v=>{onOpenChange(v);if(!v){setState('idle');setError('');}}}><SheetContent className="detail-sheet contact-sheet"><SheetHeader><span className="tiny-label">CONTACT</span><SheetTitle>연락하기</SheetTitle><SheetDescription>내용을 남기면 메일로 바로 전달됩니다. 회신은 적어 주신 이메일로 드립니다.</SheetDescription></SheetHeader>
+ return <Sheet open={open} onOpenChange={v=>v?onOpenChange(true):close()}><SheetContent className="detail-sheet contact-sheet"><SheetHeader><span className="tiny-label">CONTACT</span><SheetTitle>연락하기</SheetTitle><SheetDescription>내용을 남기면 메일로 바로 전달됩니다. 회신은 적어 주신 이메일로 드립니다.</SheetDescription></SheetHeader>
   <div className="detail-body">
-  {state==='sent'||state==='saved'?<div className="contact-done" role="status"><Mail size={22}/><h4>{state==='sent'?'전달됐습니다':'접수됐습니다'}</h4><p>{state==='sent'?'메일이 발송됐습니다. 빠르게 회신드리겠습니다.':'메시지가 저장됐습니다. 확인 후 회신드리겠습니다.'}</p><button type="button" className="contact-submit" onClick={()=>onOpenChange(false)}>닫기</button></div>
+  {state==='sent'||state==='saved'?<div className="contact-done" role="status"><Mail size={22}/><h4>{state==='sent'?'전달됐습니다':'접수됐습니다'}</h4><p>{state==='sent'?'메일이 발송됐습니다. 빠르게 회신드리겠습니다.':'메시지가 저장됐습니다. 확인 후 회신드리겠습니다.'}</p><div className="contact-actions"><button type="button" className="contact-submit" onClick={close}>닫기</button><button type="button" className="contact-alt" onClick={reset}>다시 보내기</button></div></div>
   :<form className="contact-form" onSubmit={submit} noValidate>
    <label><span>이름</span><input name="name" required maxLength={LIMITS.name} autoComplete="name" placeholder="홍길동"/></label>
    <label><span>이메일</span><input name="email" type="email" required maxLength={LIMITS.email} autoComplete="email" placeholder="reply@company.com"/></label>
