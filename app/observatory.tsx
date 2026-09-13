@@ -91,15 +91,15 @@ function ProfilePhoto({name,demo}:{name:string;demo:boolean}){
 function DetailContent({entry}:{entry:Entry}) {
  const [tab,setTab]=useState('overview');
  const metadata=[['역할',entry.role],['기간',entry.period]].filter(([,v])=>v);
- const {overview,process,decisions}=narrativeSections(entry);
+ const {overview,process}=narrativeSections(entry);
  const renderBlocks=(items:NarrativeBlock[])=><div className="detail-narrative">{items.map((b,i)=><article className="detail-paragraph" key={i}><div className="detail-paragraph-heading"><span>{String(i+1).padStart(2,'0')}</span><h4>{b.title}</h4></div><div>{b.lines.length>1?<ul>{b.lines.map((line,j)=><li key={j}>{line}</li>)}</ul>:<p>{b.lines[0]}</p>}</div></article>)}</div>;
  return <>
  {metadata.length>0&&<dl className="detail-facts">{metadata.map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>}
  {entry.kind!=='experience'&&<div className="project-evidence"><span><strong>{entry.tags.length}</strong>연결 기술</span>{entry.links?.length? <span><strong>{entry.links.length}</strong>관련 자료</span>:null}</div>}
- <Tabs value={tab} onValueChange={value=>transitionView(()=>setTab(value))} className="case-tabs"><TabsList aria-label="프로젝트 상세 구성"><TabsTrigger value="overview">개요</TabsTrigger>{process.length>0&&<TabsTrigger value="process">구현 과정</TabsTrigger>}{decisions.length>0&&<TabsTrigger value="decisions">기술적 판단</TabsTrigger>}</TabsList>
+ <Tabs value={tab} onValueChange={value=>transitionView(()=>setTab(value))} className="case-tabs"><TabsList aria-label="프로젝트 상세 구성"><TabsTrigger value="overview">개요</TabsTrigger>{process.length>0&&<TabsTrigger value="process">구현 과정</TabsTrigger>}</TabsList>
  <TabsContent value="overview">{entry.screenshots?.length?<ScreenshotGallery title={entry.title} shots={entry.screenshots}/>:null}{overview.length?renderBlocks(overview):<p>{entry.subtitle}</p>}</TabsContent>
  {process.length>0&&<TabsContent value="process"><p className="process-caption">주요 작업 · 항목을 펼쳐 내용을 확인하세요</p><div className="process-timeline">{process.flatMap(b=>b.lines).map((line,i)=><details key={i} open={i===0}><summary><span>{String(i+1).padStart(2,'0')}</span><strong>{line.length>26?line.slice(0,26)+'…':line}</strong></summary>{line.length>26&&<p>{line}</p>}</details>)}</div></TabsContent>}
- {decisions.length>0&&<TabsContent value="decisions">{renderBlocks(decisions)}</TabsContent>}
+ 
  </Tabs>
  </>;
 }

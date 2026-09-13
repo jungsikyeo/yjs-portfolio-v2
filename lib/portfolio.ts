@@ -18,13 +18,12 @@ export function edges(entries:Entry[]){return entries.flatMap(e=>[...(e.parents?
 export type NarrativeBlock={title:string;lines:string[]};
 const sectionNames='문제|접근|성과|배경|목표|해결|기술|역할|기간|한 일|판단|규모|주요 업무';
 const headingOnly=new RegExp(`^(${sectionNames})$`);const labeled=new RegExp(`^(${sectionNames})\\s*[·:：]\\s*([\\s\\S]+)`);
-export function narrativeSections(entry:Pick<Entry,'body'|'role'|'period'>):{overview:NarrativeBlock[];process:NarrativeBlock[];decisions:NarrativeBlock[]}{
+export function narrativeSections(entry:Pick<Entry,'body'|'role'|'period'>):{overview:NarrativeBlock[];process:NarrativeBlock[]}{
  const raw=entry.body.filter(p=>!(entry.role&&/^역할\s*[·:：]/.test(p))&&!(entry.period&&/^기간\s*[·:：]/.test(p)));
  const paragraphs:string[]=[];let heading='';
  for(const text of raw){if(headingOnly.test(text.trim())){heading=text.trim();paragraphs.push(heading+' · ');}else if(labeled.test(text)){heading='';paragraphs.push(text);}else if(heading){paragraphs[paragraphs.length-1]+=(paragraphs[paragraphs.length-1].endsWith(' · ')?'':'\n')+text;}else paragraphs.push(text);}
  const blocks:NarrativeBlock[]=paragraphs.map(text=>{const match=text.match(labeled);return {title:match?.[1]??'내용',lines:(match?.[2]??text).split('\n').filter(line=>line.trim()).map(line=>line.replace(/^\s*[-•]\s*/,''))};});
  const process=blocks.filter(b=>['한 일','접근','해결','주요 업무'].includes(b.title));
- // 규모 and 성과 read as the evidence behind the decisions, so they sit in the 기술적 판단 tab next to 판단 rather than in the overview.
- const decisions=blocks.filter(b=>['판단','규모','성과'].includes(b.title));
- return {overview:blocks.filter(b=>!process.includes(b)&&!decisions.includes(b)),process,decisions};
+ // Everything that is not the work log (배경·판단·규모·성과 …) stays together in the overview, in the order it was written.
+ return {overview:blocks.filter(b=>!process.includes(b)),process};
 }
