@@ -8,7 +8,7 @@ import {Dialog,DialogContent,DialogTitle} from '@/components/ui/dialog';
 import type {Screenshot} from '@/lib/portfolio';
 import {transitionView,scrollToTop} from '@/lib/motion';
 import {ThemeControls} from './theme-controls';
-import {type Portfolio,type Entry,edges} from '@/lib/portfolio';
+import {type Portfolio,type Entry,type NarrativeBlock,edges,narrativeSections} from '@/lib/portfolio';
 const kinds={person:'프로필',experience:'경력',project:'프로젝트',skill:'기술'};
 
 // Map node boxes: full nodes hold a title and a caption, compact nodes a single line.
@@ -91,15 +91,8 @@ function ProfilePhoto({name,demo}:{name:string;demo:boolean}){
 function DetailContent({entry}:{entry:Entry}) {
  const [tab,setTab]=useState('overview');
  const metadata=[['역할',entry.role],['기간',entry.period]].filter(([,v])=>v);
- const rawParagraphs=entry.body.filter(p=>!(entry.role&&/^역할\s*[·:：]/.test(p))&&!(entry.period&&/^기간\s*[·:：]/.test(p)));
- const paragraphs:string[]=[];
- let heading="";
- for(const text of rawParagraphs){if(/^(배경|한 일|판단|성과|문제|접근|목표|해결|주요 업무|기술)$/.test(text.trim())){heading=text.trim();paragraphs.push(heading+" · ");}else if(heading){paragraphs[paragraphs.length-1]+= (paragraphs[paragraphs.length-1].endsWith(" · ")?"":"\n")+text;}else paragraphs.push(text);}
- const blocks=paragraphs.map(text=>{const match=text.match(/^(문제|접근|성과|배경|목표|해결|기술|역할|기간|한 일|판단|주요 업무)\s*[·:：]\s*([\s\S]+)/);return {title:match?.[1]??'내용',lines:(match?.[2]??text).split('\n').filter(line=>line.trim()).map(line=>line.replace(/^\s*[-•]\s*/,''))};});
- const process=blocks.filter(b=>['한 일','접근','해결','주요 업무'].includes(b.title));
- const decisions=blocks.filter(b=>b.title==='판단');
- const overview=blocks.filter(b=>!process.includes(b)&&!decisions.includes(b));
- const renderBlocks=(items:typeof blocks)=><div className="detail-narrative">{items.map((b,i)=><article className="detail-paragraph" key={i}><div className="detail-paragraph-heading"><span>{String(i+1).padStart(2,'0')}</span><h4>{b.title}</h4></div><div>{b.lines.length>1?<ul>{b.lines.map((line,j)=><li key={j}>{line}</li>)}</ul>:<p>{b.lines[0]}</p>}</div></article>)}</div>;
+ const {overview,process,decisions}=narrativeSections(entry);
+ const renderBlocks=(items:NarrativeBlock[])=><div className="detail-narrative">{items.map((b,i)=><article className="detail-paragraph" key={i}><div className="detail-paragraph-heading"><span>{String(i+1).padStart(2,'0')}</span><h4>{b.title}</h4></div><div>{b.lines.length>1?<ul>{b.lines.map((line,j)=><li key={j}>{line}</li>)}</ul>:<p>{b.lines[0]}</p>}</div></article>)}</div>;
  return <>
  {metadata.length>0&&<dl className="detail-facts">{metadata.map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>}
  {entry.kind!=='experience'&&<div className="project-evidence"><span><strong>{entry.tags.length}</strong>연결 기술</span>{entry.links?.length? <span><strong>{entry.links.length}</strong>관련 자료</span>:null}</div>}

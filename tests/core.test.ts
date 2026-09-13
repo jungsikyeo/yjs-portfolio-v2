@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {normalizePage,safeUrl,type Block} from '../lib/notion-parser';
 import {createNotionClient,NotionError} from '../lib/notion-client';
 import {synchronize,type Snapshot,type Store} from '../lib/sync';
-import {demo,edges} from '../lib/portfolio';
+import {demo,edges,narrativeSections} from '../lib/portfolio';
 const block=(id:string,type:string,text:string,children?:Block[]):Block=>({id,type,[type]:{rich_text:[{plain_text:text}]},children});
 test('nested content and explicit relations normalize without inventing achievements',()=>{const p=normalizePage('Resume',[block('a','paragraph','이름: 테스트'),block('b','heading_1','경력'),block('c','heading_2','회사 A'),block('d','paragraph','기간: 2020–2021'),block('e','heading_1','프로젝트'),block('f','heading_2','도구'),block('g','paragraph','회사: 회사 A',[block('h','paragraph','사용 기술: React, TypeScript')])]);assert.equal(p.name,'테스트');assert.equal(p.entries.find(e=>e.id==='f')?.parent,'c');assert.equal(edges(p.entries).length,4);assert.equal(p.demo,false);assert.equal(p.syncedAt,null);assert(!JSON.stringify(p).includes('%'));});
 test('unsafe URLs are removed',()=>{assert.equal(safeUrl('javascript:alert(1)'),undefined);assert.equal(safeUrl('https://example.com'),'https://example.com/');});
@@ -35,3 +35,5 @@ test('unchanged pages reuse cached bodies instead of calling the blocks API',asy
  const again=await loadWorkspace(client as any,'root',config,cache);assert.equal(calls,2);assert.deepEqual(again.entries.find(e=>e.id==='job')?.body,['본문']);
  rows.EXPERIENCE[0].last_edited_time='t2';await loadWorkspace(client as any,'root',config,cache);assert.equal(calls,3);
 });
+
+test('규모 and the labeled 성과 line become their own overview sections instead of being swallowed by 판단',()=>{const body=['역할 · 단독 개발','기간 · 2026.06 — 현재','배경','만든 이유','한 일','한 것 1','한 것 2','판단','고른 이유','규모','1,256커밋 중 1,228커밋','성과 · 4종 배포'];const s=narrativeSections({body,role:'단독 개발',period:'2026.06 — 현재'});assert.deepEqual(s.decisions,[{title:'판단',lines:['고른 이유']}]);assert.deepEqual(s.process,[{title:'한 일',lines:['한 것 1','한 것 2']}]);assert.deepEqual(s.overview.map(b=>b.title),['배경','규모','성과']);assert.deepEqual(s.overview[2].lines,['4종 배포']);});

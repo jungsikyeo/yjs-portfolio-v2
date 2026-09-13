@@ -13,3 +13,17 @@ export const demo:Portfolio={name:'커리어를 연결하고,\n경험을 관측�
 {id:'design',kind:'project',title:'디자인 시스템',subtitle:'일관된 제품 경험',parent:'product',body:['문제 · 화면마다 다른 인터랙션을 일관되게 만들어야 합니다.','접근 · 접근 가능한 공통 컴포넌트를 구성하는 예시입니다.'],tags:['React','TypeScript']},
 ...['TypeScript','React','Python','PostgreSQL'].map(title=>({id:title,kind:'skill' as Kind,title,subtitle:'사용 기술 · 데모',body:['연결된 프로젝트에서 사용한 기술을 보여주는 예시입니다. 숙련도를 수치로 환산하지 않습니다.'],tags:[]}))]};
 export function edges(entries:Entry[]){return entries.flatMap(e=>[...(e.parents??(e.parent?[e.parent]:[])).filter(p=>entries.some(n=>n.id===p)).map(p=>({from:p,to:e.id,label:e.kind==='experience'?'경력':'참여'})),...e.tags.filter(t=>entries.some(n=>n.id===t)).map(t=>({from:e.id,to:t,label:'사용 기술'}))]);}
+
+// Project bodies arrive from Notion as flat paragraphs. A bare heading line (배경, 한 일, 판단, 규모 …) opens a section that absorbs the lines after it; a line that already carries its own "제목 · 내용" label (the achievements property arrives as "성과 · …") is a section by itself and must not be swallowed by whichever section is open.
+export type NarrativeBlock={title:string;lines:string[]};
+const sectionNames='문제|접근|성과|배경|목표|해결|기술|역할|기간|한 일|판단|규모|주요 업무';
+const headingOnly=new RegExp(`^(${sectionNames})$`);const labeled=new RegExp(`^(${sectionNames})\\s*[·:：]\\s*([\\s\\S]+)`);
+export function narrativeSections(entry:Pick<Entry,'body'|'role'|'period'>):{overview:NarrativeBlock[];process:NarrativeBlock[];decisions:NarrativeBlock[]}{
+ const raw=entry.body.filter(p=>!(entry.role&&/^역할\s*[·:：]/.test(p))&&!(entry.period&&/^기간\s*[·:：]/.test(p)));
+ const paragraphs:string[]=[];let heading='';
+ for(const text of raw){if(headingOnly.test(text.trim())){heading=text.trim();paragraphs.push(heading+' · ');}else if(labeled.test(text)){heading='';paragraphs.push(text);}else if(heading){paragraphs[paragraphs.length-1]+=(paragraphs[paragraphs.length-1].endsWith(' · ')?'':'\n')+text;}else paragraphs.push(text);}
+ const blocks:NarrativeBlock[]=paragraphs.map(text=>{const match=text.match(labeled);return {title:match?.[1]??'내용',lines:(match?.[2]??text).split('\n').filter(line=>line.trim()).map(line=>line.replace(/^\s*[-•]\s*/,''))};});
+ const process=blocks.filter(b=>['한 일','접근','해결','주요 업무'].includes(b.title));
+ const decisions=blocks.filter(b=>b.title==='판단');
+ return {overview:blocks.filter(b=>!process.includes(b)&&!decisions.includes(b)),process,decisions};
+}
