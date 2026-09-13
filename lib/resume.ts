@@ -11,8 +11,8 @@ export const FEATURED_BULLETS=3;
 // An experience's stack line stays one or two lines; the projects underneath carry the full lists.
 export const STACK_LIMIT=12;
 const cleanRole=(role?:string)=>role?.replace(/\s*[·]\s*/g,' · ').trim();
-// Notion periods use an em dash; the printed résumé uses a tilde, which Korean résumés conventionally do.
-const periodOf=(period?:string)=>period?.replace(/\s*[—–]\s*/g,' ~ ');
+// Periods are formatted with a tilde at sync time; older cached snapshots may still carry an em dash.
+const periodOf=(period?:string)=>period?.replace(/\s*[—–~]\s*/g,' ~ ');
 // Periods arrive as "2024.09 — 2026.02" or "2025.01 — 현재"; the first YYYY.MM is the start.
 const startOf=(period?:string)=>{const m=period?.match(/(\d{4})\.(\d{2})/);return m?{year:+m[1],month:+m[2]}:null;};
 export function yearsOfExperience(entries:Entry[],now:Date):number|undefined{

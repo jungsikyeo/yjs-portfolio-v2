@@ -10,7 +10,7 @@ function screenshotsOf(p:Props){return ((p.screenshots?.files??[]) as any[]).fla
 type Props=Record<string,any>;
 const text=(p:Props,k:string)=>rich(p[k]?.title??p[k]?.rich_text);
 const plain=(bs:Block[]):string[]=>bs.flatMap(b=>{const v=b[b.type] as any;return [rich(v?.rich_text),...(v?.cells?.map(rich)??[]),...plain(b.children??[])].filter(Boolean)});
-const period=(p:Props)=>{const d=p.period?.date;return d?`${d.start.slice(0,7).replace('-','.')} — ${d.end?d.end.slice(0,7).replace('-','.'):'현재'}`:''};
+const period=(p:Props)=>{const d=p.period?.date;return d?`${d.start.slice(0,7).replace('-','.')} ~ ${d.end?d.end.slice(0,7).replace('-','.'):'현재'}`:''};
 const names=(p:Props)=>p.stack?.multi_select?.map((v:any)=>v.name)??[];
 const same=(a:string,b:string)=>a.replaceAll('-','')===b.replaceAll('-','');
 export async function loadWorkspace(client:ReturnType<typeof createNotionClient>,root:string,config:DatabaseConfig,cache?:BodyCache):Promise<Portfolio>{
