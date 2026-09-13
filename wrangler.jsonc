@@ -15,5 +15,7 @@
     }
   ],
   "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "portfolio-yjs-screenshots" }],
+  // Contact-form relay through Cloudflare Email Routing on yeojs.dev; the destination must be a verified address.
+  "send_email": [{ "name": "EMAIL", "destination_address": "ssamzhang@kakao.com" }],
   "observability": { "enabled": true }
 }

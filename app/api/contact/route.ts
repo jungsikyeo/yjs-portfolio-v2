@@ -1,9 +1,13 @@
 import {env} from 'cloudflare:workers';
 import {validateContact,contactEmail} from '@/lib/contact';
 import {getPortfolio} from '@/lib/notion';
-// Messages are always persisted to D1 first, then relayed through Resend's free tier when a key is
-// configured. Sending is best-effort: a failed relay still leaves the message in the table.
-const runtime=env as unknown as {DB?:D1Database;RESEND_API_KEY?:string;CONTACT_TO?:string;CONTACT_FROM?:string;CONTACT_SALT?:string};
+import {EmailMessage} from 'cloudflare:email';
+import {createMimeMessage} from 'mimetext';
+// Messages are always persisted to D1 first, then relayed: through Cloudflare Email Routing when the
+// EMAIL binding exists (free, same zone), else through Resend when a key is configured. Sending is
+// best-effort: a failed relay still leaves the message in the table.
+const runtime=env as unknown as {DB?:D1Database;EMAIL?:SendEmail;RESEND_API_KEY?:string;CONTACT_TO?:string;CONTACT_FROM?:string;CONTACT_SALT?:string};
+const ROUTING_FROM='contact@yeojs.dev',ROUTING_TO='ssamzhang@kakao.com';
 const SITE='portfolio.yeojs.dev';
 const PER_IP_HOUR=5,GLOBAL_DAY=40;
 const json=(body:unknown,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
@@ -21,6 +25,12 @@ export async function POST(request:Request){
  if((perIp?.n??0)>=PER_IP_HOUR||(global?.n??0)>=GLOBAL_DAY)return json({ok:false,error:'잠시 후 다시 시도해 주세요.'},429);
  const inserted=await db.prepare('INSERT INTO contact_messages (created_at,ip_hash,name,email,company,message,sent) VALUES (?,?,?,?,?,?,0)').bind(now,ip,value.name,value.email,value.company??null,value.message).run();
  const id=inserted.meta.last_row_id;
+ if(runtime.EMAIL){
+  const {subject,text}=contactEmail(value,SITE);
+  const mime=createMimeMessage();mime.setSender({name:'Portfolio 연락하기',addr:ROUTING_FROM});mime.setRecipient(ROUTING_TO);mime.setHeader('Reply-To',value.email);mime.setSubject(subject);mime.addMessage({contentType:'text/plain',data:text});
+  try{await runtime.EMAIL.send(new EmailMessage(ROUTING_FROM,ROUTING_TO,mime.asRaw()));await db.prepare('UPDATE contact_messages SET sent=1 WHERE id=?').bind(id).run();return json({ok:true,delivered:true});}
+  catch(e){console.error('email routing send failed',e instanceof Error?e.message:e);}
+ }
  // Without a relay key there is nothing more to do; only then is the (possibly heavy) portfolio lookup for the fallback address worth it.
  if(!runtime.RESEND_API_KEY)return json({ok:true,delivered:false});
  const to=runtime.CONTACT_TO??(await getPortfolio().then(p=>p.email).catch(()=>undefined));
