@@ -92,7 +92,8 @@ function DetailContent({entry}:{entry:Entry}) {
  const [tab,setTab]=useState('overview');
  const metadata=[['역할',entry.role],['기간',entry.period]].filter(([,v])=>v);
  const {overview,process}=narrativeSections(entry);
- const renderBlocks=(items:NarrativeBlock[])=><div className="detail-narrative">{items.map((b,i)=><article className="detail-paragraph" key={i}><div className="detail-paragraph-heading"><span>{String(i+1).padStart(2,'0')}</span><h4>{b.title}</h4></div><div>{b.lines.length>1?<ul>{b.lines.map((line,j)=><li key={j}>{line}</li>)}</ul>:<p>{b.lines[0]}</p>}</div></article>)}</div>;
+ // Overview sections are prose: every Notion paragraph under a heading becomes its own <p>, so a long 판단 can be split into readable paragraphs instead of collapsing into a bullet list. The work log (process tab) is rendered separately.
+ const renderBlocks=(items:NarrativeBlock[])=><div className="detail-narrative">{items.map((b,i)=><article className="detail-paragraph" key={i}><div className="detail-paragraph-heading"><span>{String(i+1).padStart(2,'0')}</span><h4>{b.title}</h4></div><div>{b.lines.map((line,j)=><p key={j}>{line}</p>)}</div></article>)}</div>;
  return <>
  {metadata.length>0&&<dl className="detail-facts">{metadata.map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>}
  {entry.kind!=='experience'&&<div className="project-evidence"><span><strong>{entry.tags.length}</strong>연결 기술</span>{entry.links?.length? <span><strong>{entry.links.length}</strong>관련 자료</span>:null}</div>}
