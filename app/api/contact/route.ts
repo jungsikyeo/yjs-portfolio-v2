@@ -21,8 +21,10 @@ export async function POST(request:Request){
  if((perIp?.n??0)>=PER_IP_HOUR||(global?.n??0)>=GLOBAL_DAY)return json({ok:false,error:'잠시 후 다시 시도해 주세요.'},429);
  const inserted=await db.prepare('INSERT INTO contact_messages (created_at,ip_hash,name,email,company,message,sent) VALUES (?,?,?,?,?,?,0)').bind(now,ip,value.name,value.email,value.company??null,value.message).run();
  const id=inserted.meta.last_row_id;
- const to=runtime.CONTACT_TO??(await getPortfolio()).email;
- if(!runtime.RESEND_API_KEY||!to)return json({ok:true,delivered:false});
+ // Without a relay key there is nothing more to do; only then is the (possibly heavy) portfolio lookup for the fallback address worth it.
+ if(!runtime.RESEND_API_KEY)return json({ok:true,delivered:false});
+ const to=runtime.CONTACT_TO??(await getPortfolio().then(p=>p.email).catch(()=>undefined));
+ if(!to)return json({ok:true,delivered:false});
  const {subject,text}=contactEmail(value,SITE);
  const sent=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${runtime.RESEND_API_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({from:runtime.CONTACT_FROM??`Portfolio <onboarding@resend.dev>`,to:[to],reply_to:value.email,subject,text})}).catch(()=>null);
  if(sent?.ok){await db.prepare('UPDATE contact_messages SET sent=1 WHERE id=?').bind(id).run();return json({ok:true,delivered:true});}
