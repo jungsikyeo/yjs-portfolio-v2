@@ -37,3 +37,37 @@ test('unchanged pages reuse cached bodies instead of calling the blocks API',asy
 });
 
 test('규모 and the labeled 성과 line become their own overview sections instead of being swallowed by 판단',()=>{const body=['역할 · 단독 개발','기간 · 2026.06 — 현재','배경','만든 이유','한 일','한 것 1','한 것 2','판단','고른 이유','규모','1,256커밋 중 1,228커밋','성과 · 4종 배포'];const s=narrativeSections({body,role:'단독 개발',period:'2026.06 — 현재'});assert.deepEqual(s.process,[{title:'한 일',lines:['한 것 1','한 것 2']}]);assert.deepEqual(s.overview,[{title:'배경',lines:['만든 이유']},{title:'판단',lines:['고른 이유']},{title:'규모',lines:['1,256커밋 중 1,228커밋']},{title:'성과',lines:['4종 배포']}]);});
+
+import {buildResume,wrapText,FEATURED_BULLETS} from '../lib/resume';
+import {validateContact,contactEmail} from '../lib/contact';
+test('résumé projection keeps every experience, trims featured projects to a few bullets and groups skills',()=>{
+ const data:typeof real={...real,email:'me@example.com',links:[{label:'GitHub',url:'https://github.com/x'}],credentials:[{title:'학사',issuer:'대학',date:'2010-02-01'}],entries:[
+  {id:'me',kind:'person',title:'이름',subtitle:'',body:['소개'],tags:[]},
+  {id:'job',kind:'experience',title:'회사',subtitle:'',period:'2025.01 — 현재',role:'PM · DEV',body:['요약','한 것 1','한 것 2','한 것 3','한 것 4'],tags:[]},
+  {id:'p1',kind:'project',title:'대표',subtitle:'한 줄',featured:true,period:'2026.01 — 2026.02',role:'단독',body:['역할 · 단독','기간 · 2026.01','배경','왜','한 일','a','b','c','d','판단','그래서'],tags:['TS']},
+  {id:'p2',kind:'project',title:'기타',subtitle:'요약',body:['배경','왜'],tags:[]},
+  {id:'TS',kind:'skill',title:'TS',subtitle:'Frontend',body:[],tags:[]},{id:'Java',kind:'skill',title:'Java',subtitle:'Backend',body:[],tags:[]}]};
+ const doc=buildResume(data,new Date('2026-09-13T00:00:00Z'));
+ assert.deepEqual(doc.contacts,['me@example.com','github.com/x']);assert.equal(doc.generatedAt,'2026-09-13');
+ assert.deepEqual(doc.sections.map(s=>s.title),['경력','주요 프로젝트','기타 프로젝트','기술','학력 · 자격']);
+ const job=doc.sections[0].items[0];assert.equal(job.meta,'2025.01 — 현재  ·  PM · DEV');assert.equal(job.summary,'요약');assert.equal(job.bullets.length,FEATURED_BULLETS);
+ const p1=doc.sections[1].items[0];assert.deepEqual(p1.bullets,['a','b','c']);assert.equal(p1.summary,'한 줄');
+ assert.equal(doc.sections[2].items[0].summary,'요약');
+ assert.deepEqual(doc.sections[3].items.map(i=>[i.title,i.summary]),[['Frontend','TS'],['Backend','Java']]);
+ assert.equal(doc.sections[4].items[0].meta,'2010.02');
+});
+test('wrapText breaks on spaces first and inside over-long tokens as a last resort',()=>{
+ const measure=(s:string)=>s.length;
+ assert.deepEqual(wrapText('aaa bbb ccc',7,measure),['aaa bbb','ccc']);
+ assert.deepEqual(wrapText('abcdefghij kl',4,measure),['abcd','efgh','ij','kl']);
+ assert.deepEqual(wrapText('   ',10,measure),[]);
+});
+test('contact validation trims, bounds, rejects bad email and short text, and flags the honeypot',()=>{
+ assert.deepEqual(validateContact({name:' 홍길동 ',email:'a@b.co',message:'열 글자는 넘는 문의 내용입니다'}),{ok:true,value:{name:'홍길동',email:'a@b.co',company:undefined,message:'열 글자는 넘는 문의 내용입니다'}});
+ assert.equal(validateContact({name:'x',email:'nope',message:'열 글자는 넘는 문의 내용입니다'}).ok,false);
+ assert.equal(validateContact({name:'x',email:'a@b.co',message:'짧음'}).ok,false);
+ assert.deepEqual(validateContact({name:'x',email:'a@b.co',message:'열 글자는 넘는 문의 내용입니다',website:'http://spam'}),{ok:false,error:'honeypot'});
+ assert.equal(validateContact({name:'x'.repeat(100),email:'a@b.co',message:'열 글자는 넘는 문의 내용입니다'}).ok&&(validateContact({name:'x'.repeat(100),email:'a@b.co',message:'열 글자는 넘는 문의 내용입니다'}) as any).value.name.length,60);
+ const mail=contactEmail({name:'홍길동',email:'a@b.co',company:'회사',message:'안녕하세요'},'portfolio.yeojs.dev');
+ assert.equal(mail.subject,'[portfolio.yeojs.dev] 홍길동 (회사) 님의 연락');assert.match(mail.text,/이메일: a@b.co/);
+});
