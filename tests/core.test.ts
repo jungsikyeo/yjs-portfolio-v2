@@ -51,9 +51,9 @@ test('résumé projection: years, five-layer experiences with project stacks, fe
  const now=new Date('2026-09-13T00:00:00Z');
  assert.equal(yearsOfExperience(data.entries,now),17);
  const doc=buildResume(data,now);
- assert.equal(doc.years,17);assert.deepEqual(doc.contacts,[{label:'me@example.com',url:'mailto:me@example.com'},{label:'GitHub',url:'https://github.com/x'}]);
+ assert.equal(doc.years,17);assert.deepEqual(doc.contacts,[{label:'me@example.com',url:'mailto:me@example.com'},{label:'https://github.com/x',url:'https://github.com/x'}]);
  assert.deepEqual(doc.sections.map(s=>[s.title,s.layout]),[['경력','block'],['주요 프로젝트','block'],['기타 프로젝트','compact'],['기술','table'],['학력 · 자격','table']]);
- const job=doc.sections[0].items[0];assert.equal(job.meta,'2025.01 — 현재');assert.equal(job.role,'PM · DEV');assert.equal(job.summary,'요약');assert.equal(job.bullets.length,FEATURED_BULLETS);
+ const job=doc.sections[0].items[0];assert.equal(job.meta,'2025.01 ~ 현재');assert.equal(job.role,'PM · DEV');assert.equal(job.summary,'요약');assert.equal(job.bullets.length,FEATURED_BULLETS);
  assert.deepEqual(job.stack,['Java','TS','Nuxt 3']);assert.ok(STACK_LIMIT>=8);
  const p1=doc.sections[1].items[0];assert.deepEqual(p1.bullets,['a','b','c']);assert.equal(p1.company,'회사');assert.deepEqual(p1.stack,['TS','Nuxt 3']);assert.equal(p1.url,'https://example.com/p1');assert.equal(p1.role,'단독');
  assert.equal(doc.sections[2].items[0].summary,'요약');
