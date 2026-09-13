@@ -52,3 +52,6 @@ next-env.d.ts
 
 # Claude desktop launch config
 /.claude/
+
+# JetBrains IDE settings
+/.idea/
