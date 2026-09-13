@@ -32,6 +32,10 @@ export async function POST(request:Request){
  if((perIp?.n??0)>=PER_IP_HOUR||(global?.n??0)>=GLOBAL_DAY)return json({ok:false,error:'잠시 후 다시 시도해 주세요.'},429);
  const inserted=await db.prepare('INSERT INTO contact_messages (created_at,ip_hash,name,email,company,message,sent) VALUES (?,?,?,?,?,?,0)').bind(now,ip,value.name,value.email,value.company??null,value.message).run();
  const id=inserted.meta.last_row_id;
+ // `wrangler dev --local` stubs the send_email binding: send() succeeds without delivering anything.
+ // Report that honestly instead of claiming the mail went out.
+ const local=/^(localhost|127\.0\.0\.1)$/.test(new URL(request.url).hostname);
+ if(local)return json({ok:true,delivered:false,local:true});
  if(runtime.EMAIL){
   try{
    const {subject,text}=contactEmail(value,SITE);
