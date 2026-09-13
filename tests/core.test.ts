@@ -38,23 +38,27 @@ test('unchanged pages reuse cached bodies instead of calling the blocks API',asy
 
 test('규모 and the labeled 성과 line become their own overview sections instead of being swallowed by 판단',()=>{const body=['역할 · 단독 개발','기간 · 2026.06 — 현재','배경','만든 이유','한 일','한 것 1','한 것 2','판단','고른 이유','규모','1,256커밋 중 1,228커밋','성과 · 4종 배포'];const s=narrativeSections({body,role:'단독 개발',period:'2026.06 — 현재'});assert.deepEqual(s.process,[{title:'한 일',lines:['한 것 1','한 것 2']}]);assert.deepEqual(s.overview,[{title:'배경',lines:['만든 이유']},{title:'판단',lines:['고른 이유']},{title:'규모',lines:['1,256커밋 중 1,228커밋']},{title:'성과',lines:['4종 배포']}]);});
 
-import {buildResume,wrapText,FEATURED_BULLETS} from '../lib/resume';
+import {buildResume,wrapText,yearsOfExperience,FEATURED_BULLETS,STACK_LIMIT} from '../lib/resume';
 import {validateContact,contactEmail} from '../lib/contact';
-test('résumé projection keeps every experience, trims featured projects to a few bullets and groups skills',()=>{
- const data:typeof real={...real,email:'me@example.com',links:[{label:'GitHub',url:'https://github.com/x'}],credentials:[{title:'학사',issuer:'대학',date:'2010-02-01'}],entries:[
+test('résumé projection: years, five-layer experiences with project stacks, featured projects with company and stack, tables',()=>{
+ const data:typeof real={...real,email:'me@example.com',links:[{label:'GitHub',url:'https://github.com/x'}],credentials:[{title:'학사',issuer:'대학',date:'2010-02-01'},{title:'기사',issuer:'공단',date:'2013-05-01'}],entries:[
   {id:'me',kind:'person',title:'이름',subtitle:'',body:['소개'],tags:[]},
-  {id:'job',kind:'experience',title:'회사',subtitle:'',period:'2025.01 — 현재',role:'PM · DEV',body:['요약','한 것 1','한 것 2','한 것 3','한 것 4'],tags:[]},
-  {id:'p1',kind:'project',title:'대표',subtitle:'한 줄',featured:true,period:'2026.01 — 2026.02',role:'단독',body:['역할 · 단독','기간 · 2026.01','배경','왜','한 일','a','b','c','d','판단','그래서'],tags:['TS']},
-  {id:'p2',kind:'project',title:'기타',subtitle:'요약',body:['배경','왜'],tags:[]},
+  {id:'job',kind:'experience',title:'회사',subtitle:'',period:'2025.01 — 현재',role:'PM · DEV',body:['요약','한 것 1','한 것 2','한 것 3','한 것 4'],tags:['Java']},
+  {id:'old',kind:'experience',title:'옛회사',subtitle:'',period:'2009.09 — 2011.10',role:'DEV',body:['옛 요약'],tags:[]},
+  {id:'p1',kind:'project',title:'대표',subtitle:'한 줄',featured:true,period:'2026.01 — 2026.02',role:'단독',parent:'job',url:'https://example.com/p1',body:['역할 · 단독','기간 · 2026.01','배경','왜','한 일','a','b','c','d','판단','그래서'],tags:['TS','skill:Nuxt 3']},
+  {id:'p2',kind:'project',title:'기타',subtitle:'요약',parent:'job',body:['배경','왜'],tags:['TS']},
   {id:'TS',kind:'skill',title:'TS',subtitle:'Frontend',body:[],tags:[]},{id:'Java',kind:'skill',title:'Java',subtitle:'Backend',body:[],tags:[]}]};
- const doc=buildResume(data,new Date('2026-09-13T00:00:00Z'));
- assert.deepEqual(doc.contacts,['me@example.com','github.com/x']);assert.equal(doc.generatedAt,'2026-09-13');
- assert.deepEqual(doc.sections.map(s=>s.title),['경력','주요 프로젝트','기타 프로젝트','기술','학력 · 자격']);
- const job=doc.sections[0].items[0];assert.equal(job.meta,'2025.01 — 현재  ·  PM · DEV');assert.equal(job.summary,'요약');assert.equal(job.bullets.length,FEATURED_BULLETS);
- const p1=doc.sections[1].items[0];assert.deepEqual(p1.bullets,['a','b','c']);assert.equal(p1.summary,'한 줄');
+ const now=new Date('2026-09-13T00:00:00Z');
+ assert.equal(yearsOfExperience(data.entries,now),17);
+ const doc=buildResume(data,now);
+ assert.equal(doc.years,17);assert.deepEqual(doc.contacts,[{label:'me@example.com',url:'mailto:me@example.com'},{label:'GitHub',url:'https://github.com/x'}]);
+ assert.deepEqual(doc.sections.map(s=>[s.title,s.layout]),[['경력','block'],['주요 프로젝트','block'],['기타 프로젝트','compact'],['기술','table'],['학력 · 자격','table']]);
+ const job=doc.sections[0].items[0];assert.equal(job.meta,'2025.01 — 현재');assert.equal(job.role,'PM · DEV');assert.equal(job.summary,'요약');assert.equal(job.bullets.length,FEATURED_BULLETS);
+ assert.deepEqual(job.stack,['Java','TS','Nuxt 3']);assert.ok(STACK_LIMIT>=8);
+ const p1=doc.sections[1].items[0];assert.deepEqual(p1.bullets,['a','b','c']);assert.equal(p1.company,'회사');assert.deepEqual(p1.stack,['TS','Nuxt 3']);assert.equal(p1.url,'https://example.com/p1');assert.equal(p1.role,'단독');
  assert.equal(doc.sections[2].items[0].summary,'요약');
- assert.deepEqual(doc.sections[3].items.map(i=>[i.title,i.summary]),[['Frontend','TS'],['Backend','Java']]);
- assert.equal(doc.sections[4].items[0].meta,'2010.02');
+ assert.deepEqual(doc.sections[3].items.map(i=>[i.label,i.title]),[['Frontend','TS'],['Backend','Java']]);
+ assert.deepEqual(doc.sections[4].items.map(i=>[i.label,i.meta]),[['학력','2010.02'],['자격','2013.05']]);
 });
 test('wrapText breaks on spaces first and inside over-long tokens as a last resort',()=>{
  const measure=(s:string)=>s.length;
